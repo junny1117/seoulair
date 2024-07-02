@@ -1,0 +1,306 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:xml/xml.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:flutter/services.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '미세먼지 현황',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: AirQualityWidget(),
+    );
+  }
+}
+
+class AirQualityWidget extends StatefulWidget {
+  @override
+  _AirQualityWidgetState createState() => _AirQualityWidgetState();
+}
+
+class _AirQualityWidgetState extends State<AirQualityWidget> {
+  final String seoulAirQualityUrl =
+      'http://openapi.seoul.go.kr:8088/716163646d6a756e35366d44564865/xml/ListAvgOfSeoulAirQualityService/1/5/?TYPE=xml&SERVICE=ListAvgOfSeoulAirQualityService&START_INDEX=1&End_INDEX=100';
+  final String airKoreaUrl =
+      'http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty';
+  final String airKoreaKey =
+      'iCE57XnzdEmcsUE7tEDGpJHMXcxYCp1dxk8rw6syvPVHE8xix%2Bu9xHxP%2BmiryTcFgZTVY%2FDIOlw7bzrrPV65WQ%3D%3D';
+  Position? _currentPosition;
+  Map<String, dynamic> _airQualityData = {};
+  Map<String, dynamic> _avgData = {};
+  String _sublocality = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        print("위치 권한 거부됨. 허용한 후 다시 시도하세요.");
+        return;
+      }
+    }
+    await _getLocationData();
+  }
+
+  Future<void> _getLocationData() async {
+    try {
+      _currentPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium);
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          _currentPosition!.latitude, _currentPosition!.longitude);
+      if (placemarks.isNotEmpty) {
+        Placemark placemark = placemarks.first;
+        setState(() {
+          _sublocality = placemark.subLocality ?? '';
+        });
+        _fetchAirQualityData();
+      } else {
+        _showError('위치 정보 수신을 실패하였습니다.');
+      }
+    } catch (e) {
+      _showError('위치 정보 수신을 실패하였습니다: $e');
+    }
+  }
+
+  Future<void> _fetchAirQualityData() async {
+    try {
+      var response = await http.get(Uri.parse(
+          '$airKoreaUrl?serviceKey=$airKoreaKey&dataTerm=DAILY&numOfRows=1&pageNo=1&ver=1.5&stationName=$_sublocality'));
+      if (response.statusCode == 200) {
+        var document = XmlDocument.parse(response.body);
+        setState(() {
+          _airQualityData = {
+            'dataTime': document.findAllElements('dataTime').first.text,
+            'stationName': document.findAllElements('stationName').first.text,
+            'pm10Value': document.findAllElements('pm10Value').first.text,
+            'pm25Value': document.findAllElements('pm25Value').first.text,
+            'pm10Flag': document.findAllElements('pm10Flag').first.text,
+            'pm25Flag': document.findAllElements('pm25Flag').first.text,
+            'pm10Grade1h': document.findAllElements('pm10Grade1h').first.text,
+            'pm25Grade1h': document.findAllElements('pm25Grade1h').first.text,
+          };
+        });
+        _fetchAvgData();
+      } else {
+        throw Exception('미세먼지 농도 정보 수신을 실패했습니다.');
+      }
+    } catch (e) {
+      _showError('미세먼지 농도 정보 수신을 실패했습니다: $e');
+    }
+  }
+
+  Future<void> _fetchAvgData() async {
+    try {
+      var response = await http.get(Uri.parse(seoulAirQualityUrl));
+      if (response.statusCode == 200) {
+        var document = XmlDocument.parse(response.body);
+        setState(() {
+          _avgData = {
+            'PM10': document.findAllElements('PM10').first.text,
+            'PM25': document.findAllElements('PM25').first.text,
+          };
+        });
+      } else {
+        throw Exception('평균값 수신을 실패했습니다.');
+      }
+    } catch (e) {
+      _showError('평균값 수신을 실패했습니다: $e');
+    }
+  }
+
+  Widget _buildAirQualityInfo() {
+    return Padding(
+      padding: const EdgeInsets.all(15.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildInfoCard("측정소", _airQualityData['stationName'] ?? ''),
+          _buildInfoCard("기준 일시", _airQualityData['dataTime'] ?? ''),
+          _buildInfoCardWithIcon(
+            "미세먼지 농도",
+            "${_airQualityData['pm10Value']} ${_airQualityData['pm10Flag']} (${getCondition(_airQualityData, 'pm10Grade1h')})",
+            _getGradeColor(_airQualityData, 'pm10Grade1h'),
+            Icons.cloud,
+          ),
+          _buildInfoCardWithIcon(
+            "초미세먼지 농도",
+            "${_airQualityData['pm25Value']} ${_airQualityData['pm25Flag']} (${getCondition(_airQualityData, 'pm25Grade1h')})",
+            _getGradeColor(_airQualityData, 'pm25Grade1h'),
+            Icons.cloud,
+          ),
+
+          SizedBox(height: 10),
+          Text(
+            "서울시 평균",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+          ),
+          _buildInfoCard("미세먼지", _avgData['PM10'] ?? ''),
+          _buildInfoCard("초미세먼지", _avgData['PM25'] ?? ''),
+          SizedBox(height: 15),
+          Text(
+            '데이터는 실시간 관측된 자료이며 측정소 현지사정이나 데이터의 수신상태에 따라 미수신 될 수 있음',
+            style: TextStyle(
+              fontSize: 10,
+            ),
+          ),
+          Text(
+            '데이터 출처: 한국환경공단, 서울시',
+            style: TextStyle(
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(String title, String value) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.only(bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            SizedBox(height: 5),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCardWithIcon(String title, String value, Color color, IconData icon) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.only(bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(15.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  color: color,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 5),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String getCondition(Map<String, dynamic> airQualityData, String gradeKey) {
+    final int grade = int.tryParse(airQualityData[gradeKey] ?? '') ?? 0;
+    switch (grade) {
+      case 1:
+        return '좋음';
+      case 2:
+        return '보통';
+      case 3:
+        return '나쁨';
+      case 4:
+        return '매우 나쁨';
+      default:
+        return '';
+    }
+  }
+
+  Color _getGradeColor(Map<String, dynamic> airQualityData, String gradeKey) {
+    final int grade = int.tryParse(airQualityData[gradeKey] ?? '') ?? 0;
+    switch (grade) {
+      case 1:
+        return Colors.green;
+      case 2:
+        return Colors.yellow;
+      case 3:
+        return Colors.orange;
+      case 4:
+        return Colors.red;
+      default:
+        return Colors.black;
+    }
+  }
+
+//사용자 에러정보 표출
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {
+            // ok 누르면 종료
+            SystemNavigator.pop();
+          },
+        ),
+        duration: Duration(minutes: 1),
+      ),
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.grey,
+        title: Text(
+          '미세먼지 현황',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25, color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
+      body: Container(
+        color: Colors.grey,
+        child: _airQualityData.isNotEmpty
+            ? _buildAirQualityInfo()
+            : Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+}

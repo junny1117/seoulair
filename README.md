@@ -65,7 +65,9 @@
 | **기타**             | 안드로이드 앱 다운로드 링크 제공 | -                                       |
 ## UI 예시
 - 안드로이드 앱
+
 ![image](https://github.com/user-attachments/assets/61cdb208-96cb-4e46-8bce-0e5f808639a3)
+
 - 웹사이트
 ![image](https://github.com/user-attachments/assets/9647495b-b833-4458-8663-770edfdc64e8)
 

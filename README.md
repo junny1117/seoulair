@@ -67,5 +67,5 @@
 ![image](https://github.com/user-attachments/assets/9647495b-b833-4458-8663-770edfdc64e8)
 
 ## 링크
-- [웹사이트](https://junny1117.github.io/web)
+- [웹사이트](https://junny1117.github.io/seoulair)
 - [앱 다운로드 링크](https://drive.usercontent.google.com/download?id=1Cpr3Fg9AZmVUiZ_Ve3PRvR4zryAsnLtU&export=download&authuser=0&confirm=t&uuid=3cae1721-0bc4-4eea-a52e-20690fc70900&at=AO7h07fYoiSDLeY9r2Do4Tb7gSPT:1725624913381)

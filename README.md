@@ -12,13 +12,15 @@
 2. **대기질 시각화**: 미세먼지 농도에 따라 색상과 아이콘으로 시각적 변화를 주어 대기 상태를 직관적으로 확인 가능
 
 ## 사용 도구/기술
-- **프레임워크**: Flutter
-- **개발언어**: Dart
-- **API 통신**: http
-- **데이터 파싱**: xml
-- **위치 정보 수집**: Geolocation
-- **좌표 --> 주소 변환**: Geocoding
-- **상태 관리**: setState
+- **Flutter**: SDK
+- **Dart**: 개발언어
+- **http/https**: API 통신
+- **xml**: 데이터 파싱
+- **Geolocatation**: 위치 정보 수집
+- **Geocoding**: 좌표→주소 변환 
+- **Android** Studio: IDE
+- **Windows**: 운영체제
+
 
 ## API 통신
 - **API**: 한국환경공단 및 서울시 열린데이터 광장의 미세먼지 정보 API

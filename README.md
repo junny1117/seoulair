@@ -4,8 +4,8 @@
 - Flutter 프레임워크를 사용한 서울시의 각 구별로 미세먼지 및 초미세먼지 농도를 실시간으로 확인할 수 있는 웹사이트 및 안드로이드 애플리케이션
 
 ## 사용 데이터
-[한국환경공단 에어코리아 대기오염정보](https://www.data.go.kr/data/15073861/openapi.do)
-[서울시 실시간 대기환경 평균 현황](https://data.seoul.go.kr/dataList/OA-1201/S/1/datasetView.do)
+- [한국환경공단 에어코리아 대기오염정보](https://www.data.go.kr/data/15073861/openapi.do)
+- [서울시 실시간 대기환경 평균 현황](https://data.seoul.go.kr/dataList/OA-1201/S/1/datasetView.do)
 
 ## 사용 도구/기술
 - **Flutter**: SDK

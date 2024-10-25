@@ -40,7 +40,9 @@
 ## UI 예시
 - 웹사이트
 ![image](https://github.com/user-attachments/assets/9647495b-b833-4458-8663-770edfdc64e8)
+
 - 애플리케이션
+
 ![image](https://github.com/user-attachments/assets/61cdb208-96cb-4e46-8bce-0e5f808639a3)
 
 ## 링크

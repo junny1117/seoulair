@@ -14,7 +14,7 @@
 - **xml**: 데이터 파싱
 - **Geolocatation**: 위치 정보 수집
 - **Geocoding**: 좌표→주소 변환 
-- **Android** Studio: IDE
+- **Android Studio**: IDE
 - **Windows**: 운영체제
 
 ## 주요 기능

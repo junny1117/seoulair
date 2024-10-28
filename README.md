@@ -13,7 +13,7 @@
 - **http/https**: API 통신
 - **xml**: 데이터 파싱
 - **Geolocatation**: 위치 정보 수집
-- **Geocoding**: 좌표→주소 변환 
+- **Geocoding**: 경위도→주소 변환 
 - **Android Studio**: IDE
 - **Windows**: 운영체제
 
